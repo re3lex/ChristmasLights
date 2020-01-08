@@ -22,10 +22,15 @@ String processInputMessage(String str)
     {
       ESP.restart();
     }
-    else if (cmd == "switchLED")
+    else if (cmd == "PREVIOUS_MODE")
     {
-      ledSwap();
+      previousMode();
     }
+    else if (cmd == "NEXT_MODE")
+    {
+      nextMode();
+    }
+
     return createMessage(cmd);
   }
   return createMessage(str);

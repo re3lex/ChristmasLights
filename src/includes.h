@@ -10,9 +10,7 @@
 #include "utils/logger.h"
 #include "index_page.h"
 #include "utils.h"
-#include "webServer.h"
-#include "OTA.h"
-#include "tasks.h"
+
 
 // Display routines
 #include "routines/getirl.h"
@@ -35,3 +33,8 @@
 #include "routines/colorwave.h"
 
 #include "routine.h"
+
+// Service logic
+#include "webServer.h"
+#include "OTA.h"
+#include "tasks.h"

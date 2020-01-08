@@ -15,7 +15,7 @@ const char index_page[] PROGMEM = R"=====(
 
 <style>
     textarea.form-control {
-      height: 80vh !important;
+      height: 40vh !important;
       resize: none;
     }
 </style>
@@ -34,9 +34,7 @@ const char index_page[] PROGMEM = R"=====(
   var Socket;
   var autoScroll = false;
   function start() {
-    //Socket = new WebSocket('ws://' + window.location.hostname + ':81/');
     Socket = new WebSocket('ws://' + window.location.hostname + '/ws');
-    //Socket = new WebSocket('ws://192.168.1.134:81/');
     
     Socket.onmessage = function(evt) {
       var ts = new Date().toLocaleDateString() + ' ' +new Date().toLocaleTimeString()+'\r\n';
@@ -70,9 +68,13 @@ const char index_page[] PROGMEM = R"=====(
   function reset(){
     Socket.send("CMD:RST");
   }
-  function switchLED(){
-    Socket.send("CMD:switchLED");
+  function previousMode(){
+    Socket.send("CMD:PREVIOUS_MODE");
   }
+  function nextMode(){
+    Socket.send("CMD:NEXT_MODE");
+  }
+
   function onAutoscrollChange(){
     autoScroll = this.checked;
     //autoscrollCheckbox
@@ -119,6 +121,21 @@ const char index_page[] PROGMEM = R"=====(
           </div>
         </div>
         
+        <div class="card">
+          <div class="card-header">
+            <h3>Actions</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-group row">
+              <div class="col-sm-10">
+                <input type='button' class="btn btn-primary" onclick='previousMode();' value='<- Previous Mode' >
+                <input type='button' class="btn btn-success" onclick='nextMode();' value='Next Mode ->' >
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
 
@@ -131,11 +148,6 @@ const char index_page[] PROGMEM = R"=====(
             <div class="form-group row">
               <div class="col-sm-10">
                 <input type='button' class="btn btn-danger" onclick='reset();' value='Reset ESP' >
-              </div>
-            </div>
-            <div class="form-group row">
-              <div class="col-sm-10">
-                <input type='button' class="btn btn-success" onclick='switchLED();' value='Switch LED' >
               </div>
             </div>
 

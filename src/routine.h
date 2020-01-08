@@ -1,7 +1,8 @@
 
 GButton btn(BTN_PIN);
 
-void initRoutine(){
+void initRoutine()
+{
   LEDS.setBrightness(max_bright); // Set the generic maximum brightness value.
 
 #if LED_CK
@@ -92,7 +93,41 @@ void initRoutine(){
 
 bool onFlag = true;
 
-void handleRoutine(){
+void nextMode()
+{
+#ifdef APP_MY_MODE
+  if (++tek_my_mode >= (my_mode_count - 1))
+    tek_my_mode = 0;
+  newMode = pgm_read_byte(my_mode + tek_my_mode);
+#else
+  if (++newMode >= maxMode)
+    newMode = 0;
+#endif
+  SetMode(newMode);
+}
+
+void previousMode()
+{
+#ifdef APP_MY_MODE
+  if (tek_my_mode <= 0)
+  {
+    tek_my_mode = my_mode_count - 1;
+  }
+  else
+  {
+    tek_my_mode = tek_my_mode - 1;
+  }
+  newMode = pgm_read_byte(my_mode + tek_my_mode);
+
+#else
+  if (--newMode <= 0)
+    newMode = maxMode;
+#endif
+  SetMode(newMode);
+}
+
+void handleRoutine()
+{
 #if (BTN_USE == 1)
   static bool stepFlag = false;
   static bool brightDir = true;
@@ -108,27 +143,11 @@ void handleRoutine(){
   if (btn.isDouble())
   {
     PRINTLN("btn.isDouble");
-#ifdef APP_MY_MODE
-    if (++tek_my_mode >= (my_mode_count - 1))
-      tek_my_mode = 0;
-    newMode = pgm_read_byte(my_mode + tek_my_mode);
-#else
-    if (++newMode >= maxMode)
-      newMode = 0;
-#endif
-    SetMode(newMode);
+    nextMode();
   }
   if (btn.isTriple())
   {
-#ifdef APP_MY_MODE
-    if (tek_my_mode <= 0)
-      tek_my_mode = my_mode_count - 1;
-    newMode = pgm_read_byte(my_mode + tek_my_mode);
-#else
-    if (--newMode <= 0)
-      newMode = maxMode;
-#endif
-    SetMode(newMode);
+    previousMode();
   }
   if (btn.hasClicks())
   {
@@ -207,7 +226,7 @@ void handleRoutine(){
 #if APP_CHANGE_SPARK == 4
         sparkler(rand_spark);
 #else
-        sparkler(APP_CHANGE_SPARK); // бенгальский огонь
+        sparkler(APP_CHANGE_SPARK);                        // бенгальский огонь
 #endif
       }
 #endif
@@ -840,13 +859,16 @@ void strobe_mode(uint8_t mode, bool mc)
 
   if (mc)
   {
-    if (palchg == 0) {
+    if (palchg == 0)
+    {
       PRINTLN(F("Change palette off"));
     }
-    else if (palchg == 1) {
+    else if (palchg == 1)
+    {
       PRINTLN(F("Change palette Stop"));
     }
-    else if (palchg == 3) {
+    else if (palchg == 3)
+    {
       PRINTLN(F("Change palette ON"));
     }
   }
