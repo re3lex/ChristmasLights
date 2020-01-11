@@ -35,26 +35,6 @@
 #include "initialization.h"
 #include "includes.h"
 
-void initWiFi()
-{
-  WiFi.persistent(false); // Do not write new connections to FLASH
-  WiFi.mode(WIFI_STA);
-
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    ledSwap();
-    delay(500);
-    PRINT(".");
-  }
-
-  PRINTLN("");
-  PRINTLN("WiFi connected");
-  PRINT("IP address: ");
-  PRINTLN(WiFi.localIP());
-}
-
 void setup()
 {
   Serial.begin(115200);
@@ -62,19 +42,28 @@ void setup()
   PRINTLN("***** Setup start *****");
 
   initWiFi();
-  initWebServer();
-  initOTA();
-  //initTasks();
+  if (!isAP)
+  {
+    initWebServer();
+    initOTA();
+    //initTasks();
 
-  initRoutine();
-
+    initRoutine();
+  }
   PRINTLN("***** Setup end *****");
 }
 
 void loop()
 {
+
+  if (isAP)
+  {
+    wm.process();
+    return;
+  }
+
   ArduinoOTA.handle();
   ws.cleanupClients();
-  
+
   handleRoutine();
 }

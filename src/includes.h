@@ -1,5 +1,5 @@
 #include <ArduinoOTA.h>
-#include "WiFi.h"
+#include <WiFiManager.h>
 #include "ESPAsyncWebServer.h"
 #include <rom/rtc.h>
 
@@ -8,6 +8,7 @@
 
 //local header files
 #include "utils/logger.h"
+#include "wi_fi.h"
 #include "index_page.h"
 #include "utils.h"
 
@@ -35,6 +36,6 @@
 #include "routine.h"
 
 // Service logic
-#include "webServer.h"
+#include "web_server.h"
 #include "OTA.h"
 #include "tasks.h"
