@@ -68,6 +68,7 @@ uint16_t StepMode = MAX_LEDS; // Текущий шаг перехода от н�
 #endif
 #endif
 
+uint8_t demo_duration = APP_DEMO_TIME; //in seconds!
 uint8_t demorun = APP_DEMO_MODE; // 0 = regular mode, 1 = demo mode, 2 = shuffle mode.
 #define maxMode 41           // Maximum number of modes.
 
@@ -101,9 +102,9 @@ int8_t thisspeed = 4;     // Изменение стандартной скор�
 uint8_t wavebright = 255; // Вы можете изменить яркость волн / полос, катящихся по экрану.
 
 #ifdef APP_MY_MODE
-const PROGMEM uint8_t my_mode[] = {APP_MY_MODE}; //массив выбранных режимов
-const uint8_t my_mode_count = sizeof(my_mode); //колличество выбрано режимов
-uint8_t tek_my_mode = 0;                       //Указатель на текущий режим
+const PROGMEM uint8_t my_modes[] = {APP_MY_MODE}; //массив выбранных режимов
+const uint8_t my_mode_count = sizeof(my_modes); //колличество выбрано режимов
+uint8_t current_mode = 0;                       //Указатель на текущий режим
 #endif
 
 #if APP_CHANGE_SPARK == 4

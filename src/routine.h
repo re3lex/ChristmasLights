@@ -72,10 +72,10 @@ void initRoutine()
   switch (demorun)
   {
   case 3:
-    ledMode = pgm_read_byte(my_mode + tek_my_mode);
+    ledMode = pgm_read_byte(my_modes + current_mode);
     break; // демо 3
   case 4:
-    ledMode = pgm_read_byte(my_mode + random8(my_mode_count));
+    ledMode = pgm_read_byte(my_modes + random8(my_mode_count));
     break; // демо 4
   }
 #endif
@@ -96,9 +96,9 @@ bool onFlag = true;
 void nextMode()
 {
 #ifdef APP_MY_MODE
-  if (++tek_my_mode >= (my_mode_count - 1))
-    tek_my_mode = 0;
-  newMode = pgm_read_byte(my_mode + tek_my_mode);
+  if (++current_mode >= (my_mode_count - 1))
+    current_mode = 0;
+  newMode = pgm_read_byte(my_modes + current_mode);
 #else
   if (++newMode >= maxMode)
     newMode = 0;
@@ -109,21 +109,26 @@ void nextMode()
 void previousMode()
 {
 #ifdef APP_MY_MODE
-  if (tek_my_mode <= 0)
+  if (current_mode <= 0)
   {
-    tek_my_mode = my_mode_count - 1;
+    current_mode = my_mode_count - 1;
   }
   else
   {
-    tek_my_mode = tek_my_mode - 1;
+    current_mode = current_mode - 1;
   }
-  newMode = pgm_read_byte(my_mode + tek_my_mode);
+  newMode = pgm_read_byte(my_modes + current_mode);
 
 #else
   if (--newMode <= 0)
     newMode = maxMode;
 #endif
   SetMode(newMode);
+}
+
+void setBrightness(int v) {
+  max_bright = constrain(v, 0, 255);
+  FastLED.setBrightness(max_bright);
 }
 
 void handleRoutine()
@@ -136,18 +141,18 @@ void handleRoutine()
   if (btn.isSingle())
   {
     PRINTLN("btn.isSingle");
-    onFlag = !onFlag;
-    FastLED.setBrightness(onFlag ? max_bright : 0);
-    FastLED.show();
+    nextMode();
   }
   if (btn.isDouble())
   {
     PRINTLN("btn.isDouble");
-    nextMode();
+    previousMode();
   }
   if (btn.isTriple())
   {
-    previousMode();
+    onFlag = !onFlag;
+    setBrightness(onFlag ? max_bright : 0);
+    FastLED.show();
   }
   if (btn.hasClicks())
   {
@@ -164,8 +169,7 @@ void handleRoutine()
   {
     stepFlag = true;
     max_bright += (brightDir ? 20 : -20);
-    max_bright = constrain(max_bright, 0, 255);
-    FastLED.setBrightness(max_bright);
+    setBrightness(max_bright);
   }
 #endif
 
@@ -880,7 +884,7 @@ void demo_check()
 
   if (demorun)
   {
-    if ((millis() - demo_time) >= (APP_DEMO_TIME * 1000L))
+    if ((millis() - demo_time) >= (demo_duration * 1000L))
     {                                                            //Наступило время смены эффекта
       demo_time = millis();                                      //Запомним время
       gCurrentPaletteNumber = random8(0, gGradientPaletteCount); //Случайно поменяем палитру
@@ -892,14 +896,14 @@ void demo_check()
         break;
 #ifdef APP_MY_MODE
       case 3:
-        if (tek_my_mode >= (my_mode_count - 1))
-          tek_my_mode = 0; // демо 3
+        if (current_mode >= (my_mode_count - 1))
+          current_mode = 0; // демо 3
         else
-          tek_my_mode++;
-        newMode = pgm_read_byte(my_mode + tek_my_mode);
+          current_mode++;
+        newMode = pgm_read_byte(my_modes + current_mode);
         break;
       case 4:
-        newMode = pgm_read_byte(my_mode + random8(my_mode_count)); // демо 4
+        newMode = pgm_read_byte(my_modes + random8(my_mode_count)); // демо 4
         break;
 #endif
       default:

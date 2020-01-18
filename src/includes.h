@@ -3,6 +3,8 @@
 #include "ESPAsyncWebServer.h"
 #include <rom/rtc.h>
 #include "ArduinoJson.h"
+#include "FS.h"
+#include "SPIFFS.h"
 
 //local libs
 #include <GyverButton.h>
@@ -10,7 +12,6 @@
 //local header files
 #include "utils/logger.h"
 #include "wi_fi.h"
-#include "index_page.h"
 #include "utils.h"
 
 

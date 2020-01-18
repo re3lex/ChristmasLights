@@ -1,11 +1,6 @@
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-void indexrequest(AsyncWebServerRequest *request)
-{
-  request->send_P(200, "text/html", index_page);
-}
-
 void sendJSON(AsyncWebSocketClient *client, JsonDocument &doc)
 {
   size_t len = measureJson(doc);
@@ -24,18 +19,48 @@ void sendJSON(AsyncWebSocketClient *client, JsonDocument &doc)
   }
 }
 
-/* JsonDocument getCurrentSettings() {
-
-}
- */
-JsonDocument processInputMessage(String str)
+JsonDocument getCurrentSettings()
 {
-  int cmdIdx = str.indexOf("CMD:");
-  if (cmdIdx == 0)
-  {
-    String cmd = str.substring(4, str.length());
+  DynamicJsonDocument doc(500);
+  JsonObject settings = doc.createNestedObject("settings");
 
-    if (cmd == "RST")
+  settings["current_mode"] = newMode;
+  settings["max_bright"] = max_bright;
+  settings["demo_mode"] = demorun;
+  settings["demo_duration"] = demo_duration;
+
+  JsonArray modes = settings.createNestedArray("my_modes");
+
+  for (size_t i = 0; i < my_mode_count; i++)
+  {
+    modes.add(my_modes[i]);
+  }
+
+  return doc;
+}
+
+JsonDocument processInputMessage(char *data)
+{
+  StaticJsonDocument<300> doc;
+  DeserializationError error = deserializeJson(doc, data);
+  if (error)
+  {
+    PRINT("deserializeJson() failed: ");
+    PRINTLN(error.c_str());
+
+    DynamicJsonDocument res(300);
+    res["message"] = "deserializeJson() failed: " + String(error.c_str());
+
+    return res;
+  }
+
+  String cmd = doc["cmd"];
+  PRINT("cmd: ");
+  PRINTLN(cmd);
+
+  if (cmd != "null")
+  {
+    if (cmd == "RESET_ESP")
     {
       ESP.restart();
     }
@@ -47,17 +72,38 @@ JsonDocument processInputMessage(String str)
     {
       nextMode();
     }
+    else if (cmd == "CURRENT_MODE")
+    {
+      uint8_t value = doc["value"];
+      SetMode(value);
+    }
+    else if (cmd == "DEMO_MODE")
+    {
+      demorun = doc["value"];
+    }
+    else if (cmd == "DEMO_DURATION")
+    {
+      demo_duration = doc["value"];
+    }
+    else if (cmd == "MAX_BRIGHT")
+    {
+      int value = doc["value"];
+      setBrightness(value);
+    }
 
-    DynamicJsonDocument doc(60);
-    doc["message"] = cmd;
-    
-    return doc;
+    DynamicJsonDocument res(200);
+    res["message"] = cmd;
+
+    return res;
   }
 
-  DynamicJsonDocument doc(200);
-  doc["message"] = str;
-  return doc;
+  StaticJsonDocument<60> res;
+
+  res["message"] = "unsupported string";
+
+  return res;
 }
+
 
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
@@ -81,6 +127,9 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     DynamicJsonDocument doc(400);
     doc["message"] = msg;
     sendJSON(client, doc);
+
+    JsonDocument settingsJson = getCurrentSettings();
+    sendJSON(client, settingsJson);
   }
   else if (type == WS_EVT_DISCONNECT)
   {
@@ -109,7 +158,10 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
       {
         data[len] = 0;
         PRINTF("%s\n", (char *)data);
-        JsonDocument res = processInputMessage(String((char *)data));
+
+        JsonDocument res = processInputMessage((char *)data);
+
+        PRINTLN(measureJson(res));
         sendJSON(client, res);
       }
       else
@@ -156,7 +208,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         if (info->final)
         {
           PRINTF("ws[%s][%u] %s-message end\n", server->url(), client->id(), (info->message_opcode == WS_TEXT) ? "text" : "binary");
-          JsonDocument res = processInputMessage(String((char *)data));
+          JsonDocument res = processInputMessage((char *)data);
           sendJSON(client, res);
           if (info->message_opcode == WS_TEXT)
             client->text("I got your text message");
@@ -170,13 +222,15 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 
 void initWebServer()
 {
-  server.on("/", HTTP_GET, indexrequest);
-  // server.on("/xml", HTTP_PUT, xmlrequest);
-  server.onNotFound([](AsyncWebServerRequest *request) { request->send(404); });
-
-  server.on("/hello", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/plain", "Hello World");
+  SPIFFS.begin(true);
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(SPIFFS, "/index.html");
   });
+  server.on("/routine.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(SPIFFS, "/Routine.js");
+  });
+
+  server.onNotFound([](AsyncWebServerRequest *request) { request->send(404); });
 
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);

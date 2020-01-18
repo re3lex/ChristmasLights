@@ -3,7 +3,8 @@
 #if (IR_ON == 1 || KEY_ON == 1 || BTN_USE == 1)
 
 void SetMode (uint8_t Mode)
-{ demorun = 0;
+{ 
+  //demorun = 0;
 #if APP_CHANGE_ON == 1
   newMode = Mode;
   StepMode = 1;
