@@ -38,7 +38,13 @@ const char index_page[] PROGMEM = R"=====(
     
     Socket.onmessage = function(evt) {
       var ts = new Date().toLocaleDateString() + ' ' +new Date().toLocaleTimeString()+'\r\n';
-      var json = evt.data ? JSON.parse(evt.data.replace(/\r/g,"\\r").replace(/\n/g,"\\n")) : {};
+      try {
+        var json = evt.data ? JSON.parse(evt.data.replace(/\r/g,"\\r").replace(/\n/g,"\\n")) : {};
+      }catch(error) {
+        console.warn("error:", error);
+        console.warn("Original message:", evt.data);
+        return;
+      }
 
       var textArea = document.getElementById('rxConsole');
 

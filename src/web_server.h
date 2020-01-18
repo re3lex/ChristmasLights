@@ -6,12 +6,29 @@ void indexrequest(AsyncWebServerRequest *request)
   request->send_P(200, "text/html", index_page);
 }
 
-String createMessage(String msg)
+void sendJSON(AsyncWebSocketClient *client, JsonDocument &doc)
 {
-  return "{\"message\":\"" + msg + "\"}";
+  size_t len = measureJson(doc);
+  AsyncWebSocketMessageBuffer *buffer = ws.makeBuffer(len);
+  if (buffer)
+  {
+    serializeJson(doc, (char *)buffer->get(), len + 1);
+    if (client)
+    {
+      client->text(buffer);
+    }
+    else
+    {
+      ws.textAll(buffer);
+    }
+  }
 }
 
-String processInputMessage(String str)
+/* JsonDocument getCurrentSettings() {
+
+}
+ */
+JsonDocument processInputMessage(String str)
 {
   int cmdIdx = str.indexOf("CMD:");
   if (cmdIdx == 0)
@@ -31,9 +48,15 @@ String processInputMessage(String str)
       nextMode();
     }
 
-    return createMessage(cmd);
+    DynamicJsonDocument doc(60);
+    doc["message"] = cmd;
+    
+    return doc;
   }
-  return createMessage(str);
+
+  DynamicJsonDocument doc(200);
+  doc["message"] = str;
+  return doc;
 }
 
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
@@ -55,9 +78,9 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                  "\r\nesp_get_minimum_free_heap_size() : " + esp_get_minimum_free_heap_size();
 
     // send message to client
-    String json = createMessage(msg);
-
-    client->text(json);
+    DynamicJsonDocument doc(400);
+    doc["message"] = msg;
+    sendJSON(client, doc);
   }
   else if (type == WS_EVT_DISCONNECT)
   {
@@ -86,8 +109,8 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
       {
         data[len] = 0;
         PRINTF("%s\n", (char *)data);
-        String res = processInputMessage(String((char *)data));
-        client->text(res);
+        JsonDocument res = processInputMessage(String((char *)data));
+        sendJSON(client, res);
       }
       else
       {
@@ -133,8 +156,8 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         if (info->final)
         {
           PRINTF("ws[%s][%u] %s-message end\n", server->url(), client->id(), (info->message_opcode == WS_TEXT) ? "text" : "binary");
-          String res = processInputMessage(String((char *)data));
-          client->text(res);
+          JsonDocument res = processInputMessage(String((char *)data));
+          sendJSON(client, res);
           if (info->message_opcode == WS_TEXT)
             client->text("I got your text message");
           else

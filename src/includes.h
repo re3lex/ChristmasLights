@@ -2,6 +2,7 @@
 #include <WiFiManager.h>
 #include "ESPAsyncWebServer.h"
 #include <rom/rtc.h>
+#include "ArduinoJson.h"
 
 //local libs
 #include <GyverButton.h>
