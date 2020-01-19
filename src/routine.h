@@ -93,21 +93,33 @@ void initRoutine()
 
 bool onFlag = true;
 
+void changeMode(uint8_t mode)
+{
+  if (mode != newMode)
+  {
+    newMode = mode;
+    modeChanged(newMode);
+  }
+}
+
 void nextMode()
 {
+  uint8_t m = newMode;
 #ifdef APP_MY_MODE
   if (++current_mode >= (my_mode_count - 1))
     current_mode = 0;
-  newMode = pgm_read_byte(my_modes + current_mode);
+  m = pgm_read_byte(my_modes + current_mode);
 #else
   if (++newMode >= maxMode)
-    newMode = 0;
+    m = 0;
+  ;
 #endif
-  SetMode(newMode);
+  SetMode(m);
 }
 
 void previousMode()
 {
+  uint8_t m = newMode;
 #ifdef APP_MY_MODE
   if (current_mode <= 0)
   {
@@ -117,16 +129,16 @@ void previousMode()
   {
     current_mode = current_mode - 1;
   }
-  newMode = pgm_read_byte(my_modes + current_mode);
-
+  m = pgm_read_byte(my_modes + current_mode);
 #else
   if (--newMode <= 0)
-    newMode = maxMode;
+    m = maxMode;
 #endif
-  SetMode(newMode);
+  SetMode(m);
 }
 
-void setBrightness(int v) {
+void setBrightness(int v)
+{
   max_bright = constrain(v, 0, 255);
   FastLED.setBrightness(max_bright);
 }
@@ -885,14 +897,16 @@ void demo_check()
   if (demorun)
   {
     if ((millis() - demo_time) >= (demo_duration * 1000L))
-    {                                                            //Наступило время смены эффекта
+    {
+      uint8_t mode = newMode;                                    //Наступило время смены эффекта
       demo_time = millis();                                      //Запомним время
       gCurrentPaletteNumber = random8(0, gGradientPaletteCount); //Случайно поменяем палитру
 #if APP_CHANGE_ON == 1
       switch (demorun)
       {
       case 2:
-        newMode = random8(0, maxMode); // демо 2
+        mode = random8(0, maxMode); // демо 2
+        changeMode(mode);
         break;
 #ifdef APP_MY_MODE
       case 3:
@@ -900,17 +914,22 @@ void demo_check()
           current_mode = 0; // демо 3
         else
           current_mode++;
-        newMode = pgm_read_byte(my_modes + current_mode);
+        mode = pgm_read_byte(my_modes + current_mode);
+        changeMode(mode);
         break;
       case 4:
-        newMode = pgm_read_byte(my_modes + random8(my_mode_count)); // демо 4
+        mode = pgm_read_byte(my_modes + random8(my_mode_count)); // демо 4
+        changeMode(mode);
         break;
 #endif
       default:
         if (newMode >= maxMode)
-          newMode = 0; // демо 1
+          changeMode(0); // демо 1
         else
-          newMode++;
+        {
+          mode = newMode + 1;
+          changeMode(mode);
+        }
         break;
       }
       StepMode = 1;
@@ -953,6 +972,7 @@ void demo_check()
 #endif
 #endif
     } // if lastSecond
-  }   // if demorun
+
+  } // if demorun
 
 } // demo_check()

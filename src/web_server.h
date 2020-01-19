@@ -21,13 +21,14 @@ void sendJSON(AsyncWebSocketClient *client, JsonDocument &doc)
 
 JsonDocument getCurrentSettings()
 {
-  DynamicJsonDocument doc(500);
+  DynamicJsonDocument doc(900);
   JsonObject settings = doc.createNestedObject("settings");
 
   settings["current_mode"] = newMode;
   settings["max_bright"] = max_bright;
   settings["demo_mode"] = demorun;
   settings["demo_duration"] = demo_duration;
+  settings["glitter"] = glitter;
 
   JsonArray modes = settings.createNestedArray("my_modes");
 
@@ -90,11 +91,13 @@ JsonDocument processInputMessage(char *data)
       int value = doc["value"];
       setBrightness(value);
     }
+    else if (cmd == "GLITTER")
+    {
+      bool value = doc["value"];
+      glitter = value;
+    }
 
-    DynamicJsonDocument res(200);
-    res["message"] = cmd;
-
-    return res;
+    return getCurrentSettings();
   }
 
   StaticJsonDocument<60> res;
@@ -104,6 +107,10 @@ JsonDocument processInputMessage(char *data)
   return res;
 }
 
+void modeChanged(uint8_t Mode) {
+  JsonDocument json = getCurrentSettings();
+  sendJSON(NULL, json);
+}
 
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
@@ -118,7 +125,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 
     String msg = "Connected\r\nBuild: " + String(SRC_REV) +
                  "\r\nBuild date: " + String(SRC_DATE) +
-                 "\r\nLast reset reason: " + getLastResetReason() +
+                 "\r\nLast reset reason: \r\n" + getLastResetReason() +
                  "\r\nESP.getFreeHeap() : " + ESP.getFreeHeap() +
                  "\r\nesp_get_free_heap_size() : " + esp_get_free_heap_size() +
                  "\r\nesp_get_minimum_free_heap_size() : " + esp_get_minimum_free_heap_size();
@@ -160,8 +167,6 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         PRINTF("%s\n", (char *)data);
 
         JsonDocument res = processInputMessage((char *)data);
-
-        PRINTLN(measureJson(res));
         sendJSON(client, res);
       }
       else
@@ -172,10 +177,6 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         }
         PRINTF("\n");
       }
-      if (info->opcode == WS_TEXT)
-        client->text("I got your text message");
-      else
-        client->binary("I got your binary message");
     }
     else
     {
@@ -210,10 +211,6 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
           PRINTF("ws[%s][%u] %s-message end\n", server->url(), client->id(), (info->message_opcode == WS_TEXT) ? "text" : "binary");
           JsonDocument res = processInputMessage((char *)data);
           sendJSON(client, res);
-          if (info->message_opcode == WS_TEXT)
-            client->text("I got your text message");
-          else
-            client->binary("I got your binary message");
         }
       }
     }

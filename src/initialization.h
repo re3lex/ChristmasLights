@@ -208,3 +208,7 @@ void sparkler(uint8_t n) //Бенгальский огонь
     }
   }
 }
+
+void modeChanged(uint8_t Mode);
+
+void changeMode(uint8_t mode);

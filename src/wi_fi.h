@@ -42,6 +42,21 @@ void initWiFi()
   }
   PRINT("isAP: ");
   PRINTLN(isAP);
+
+  if (!MDNS.begin(WIFI_HOST_NAME))
+  {
+    PRINTLN("Error setting up MDNS responder!");
+    while (1)
+    {
+      delay(1000);
+    }
+  }
+
+  PRINTLN("mDNS responder started");
+  MDNS.setInstanceName(WIFI_HOST_DESCRIPTION);
+
+  // Add service to MDNS-SD
+  MDNS.addService("http", "tcp", 80);
 }
 
 /*

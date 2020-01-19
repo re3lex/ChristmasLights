@@ -3,7 +3,7 @@ import subprocess
 Import("env")
 
 configFileName = 'config.ini'
-stringConversion = ['WIFI_AP_SSID', 'WIFI_AP_PASSWORD']
+stringConversion = ['WIFI_AP_SSID', 'WIFI_AP_PASSWORD', 'WIFI_HOST_NAME', 'WIFI_HOST_DESCRIPTION']
 
 config = configparser.ConfigParser()
 readFiles = config.read(configFileName)

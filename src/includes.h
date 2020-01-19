@@ -1,5 +1,6 @@
 #include <ArduinoOTA.h>
 #include <WiFiManager.h>
+#include <ESPmDNS.h>
 #include "ESPAsyncWebServer.h"
 #include <rom/rtc.h>
 #include "ArduinoJson.h"

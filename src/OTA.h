@@ -2,7 +2,7 @@
 
 void initOTA()
 {
-  ArduinoOTA.setHostname("ESP32_TEST");
+  ArduinoOTA.setHostname(WIFI_HOST_NAME);
 
   ArduinoOTA.onStart([]() {
     //ledOn();

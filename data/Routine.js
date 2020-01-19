@@ -41,9 +41,6 @@ const modesMap = {
   "39": "fire()",
   "40": "candles()",
   "41": "colorwaves()",
-  "100": "fill_solid(leds, NUM_LEDS, solid)",
-  "200": "fill_solid(leds, NUM_LEDS, CRGB(255, 255, 255))",
-  "201": "fill_solid(leds, meshdelay, CRGB(255, 255, 255))",
 };
 
 class Routine {
@@ -57,7 +54,7 @@ class Routine {
     this.socket = new WebSocket('ws://' + window.location.hostname + '/ws');
     this.socket.onmessage = (evt) => this.onSocketMessage(evt);
     this.socket.onerror = (evt) => this.onSocketError(evt);
-    this.socket.onclose  = (evt) => this.onSocketClose(evt);
+    this.socket.onclose = (evt) => this.onSocketClose(evt);
 
     const urlParams = new URLSearchParams(window.location.search);
     const isAdmin = urlParams.get('admin') == "1";
@@ -74,8 +71,7 @@ class Routine {
       });
       $('#autoscrollCheckbox').click();
 
-      $('#console-nav-item').css({ "display": "" });
-      $('#settings-nav-item').css({ "display": "" });
+      $('#nav-bar').css({ "display": "" });
     }
   }
 
@@ -128,22 +124,34 @@ class Routine {
   }
 
   handleSettingsLoad(settings) {
-    const { my_modes = [], max_bright, current_mode, demo_mode, demo_duration } = settings;
-    const modesField = $("#my_modes");
-    modesField.empty();
+    const { my_modes = [], max_bright, current_mode, demo_mode, demo_duration, glitter = false } = settings;
 
-    my_modes.forEach(mode => {
-      const modeName = modesMap[mode];
-      const option = $("<option></option>").attr("value", mode).text(`${mode}. ${modeName}`);
-      if (current_mode == mode) {
-        option.attr('selected', true);
-      }
-      modesField.append(option);
-    });
+    this.my_modes = my_modes;
 
     $('#max_bright').attr('value', max_bright);
     $('#demo_duration').attr('value', demo_duration);
     $('#demo_mode').val(demo_mode);
+    $('#glitter').prop('checked', glitter);
+    this.loadAllowedModes(demo_mode, current_mode);
+  }
+
+  loadAllowedModes(demo_mode, selectedMode) {
+    const modesField = $("#my_modes");
+    modesField.empty();
+
+    let modes = Object.keys(modesMap);
+    if (demo_mode == '3' || demo_mode == '4') {
+      modes = this.my_modes;
+    }
+
+    modes.forEach(mode => {
+      const modeName = modesMap[mode];
+      const option = $("<option></option>").attr("value", mode).text(`${mode}. ${modeName}`);
+      if (mode == selectedMode) {
+        option.attr('selected', true);
+      }
+      modesField.append(option);
+    });
   }
 
   onBrightnessChange(e) {
@@ -184,12 +192,25 @@ class Routine {
     this.socket.send(JSON.stringify(cmd));
   }
 
+  onGlitterChange(e) {
+    const { checked: value } = e.target;
+
+    const cmd = {
+      cmd: 'GLITTER',
+      value
+    }
+    this.socket.send(JSON.stringify(cmd));
+  }
+
   onDemoModeChange(e) {
     const { value } = e.target;
 
     if (!value) {
       return;
     }
+
+    this.loadAllowedModes(value, $("#my_modes").val());
+
     const cmd = {
       cmd: 'DEMO_MODE',
       value
